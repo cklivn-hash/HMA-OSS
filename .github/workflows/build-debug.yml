@@ -24,6 +24,9 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Create local.properties
+        run: echo "officialBuild=false" > local.properties
+
       - name: Gradle prebuild
         run: ./gradlew prebuild
 
