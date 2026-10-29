@@ -31,7 +31,7 @@ jobs:
         run: ./gradlew prebuild
 
       - name: Build debug module
-        run: ./gradlew :zygote:assembleDebug
+        run: ./gradlew :app:assembleDebug :zygote:assembleDebug
 
       - name: Upload debug module
         uses: actions/upload-artifact@v7
