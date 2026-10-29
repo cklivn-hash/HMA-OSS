@@ -30,8 +30,11 @@ jobs:
       - name: Gradle prebuild
         run: ./gradlew prebuild
 
+      - name: Build manager app
+        run: ./gradlew :app:assembleDebug
+
       - name: Build debug module
-        run: ./gradlew :app:assembleDebug :zygote:assembleDebug
+        run: ./gradlew :zygote:assembleDebug
 
       - name: Upload debug module
         uses: actions/upload-artifact@v7
