@@ -116,24 +116,31 @@ object ServiceUtils {
         return Magic.magicNumbers.contentEquals(other)
     }
 
+    private fun isHookFrame(item: StackTraceElement): Boolean =
+        item.className.containsMultiple(
+            "BulkHooker",
+            "com.v7878",
+            "MethodHandle",
+            BuildConfig.APP_PACKAGE_NAME,
+        ) || item.fileName.containsMultiple(
+            "r8-map-id-",
+            "dex-id-",
+        )
+
     fun clearStackTraces(throwableIn: Throwable?) {
         var throwable: Throwable? = throwableIn
 
         while (throwable != null) {
-            val newTrace = throwable.stackTrace.filter { item ->
-                !item.className.containsMultiple(
-                    "BulkHooker",
-                    "com.v7878",
-                    "MethodHandle",
-                    BuildConfig.APP_PACKAGE_NAME,
-                ) && !item.fileName.containsMultiple(
-                    "r8-map-id-",
-                    "dex-id-",
-                )
-            }
-
-            if (newTrace.size != throwable.stackTrace.size) {
-                throwable.stackTrace = newTrace.toTypedArray()
+            val trace = throwable.stackTrace
+            // Truncate at the first hook-related frame (scanning from the throw
+            // point downward) instead of splicing the hook frames out of the
+            // middle. Splicing leaves a discontinuous stack -- a caller frame
+            // directly above a framework frame it could not have called -- which
+            // the Chunqiu "HMA_STACK" probe flags as an anomaly. Cutting at the
+            // hook boundary leaves a shorter but continuous, plausible trace.
+            val cutIndex = trace.indexOfFirst { isHookFrame(it) }
+            if (cutIndex >= 0) {
+                throwable.stackTrace = trace.copyOfRange(0, cutIndex)
             }
 
             throwable = throwable.cause
